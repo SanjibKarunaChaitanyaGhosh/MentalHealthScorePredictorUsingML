@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ML → API → Web | Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--ink:#0f172a;--mute:#64748b;--line:#e2e8f0;--soft:#f8fafc;--pri:#4f46e5;--pri-soft:#eef2ff;--acc:#0ea5e9;--ok:#10b981}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+code,pre{font-family:'JetBrains Mono',Consolas,monospace}
+.deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;padding:6vh 7vw 9vh;display:flex;flex-direction:column;justify-content:center;opacity:0;visibility:hidden;transform:translateX(30px);transition:.45s ease}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.slide.prev{transform:translateX(-30px)}
+.eyebrow{font-size:clamp(.75rem,1.1vw,.95rem);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pri);margin-bottom:1.2vh}
+h1{font-size:clamp(2.4rem,6vw,5rem);line-height:1.05;font-weight:800;letter-spacing:-.03em}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--pri),var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{font-size:clamp(1.8rem,3.8vw,3.1rem);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.lead{color:var(--mute);font-size:clamp(1rem,1.7vw,1.4rem);margin-top:2vh;max-width:52ch;line-height:1.5}
+.tag{display:inline-block;margin-top:4vh;padding:.5em 1em;border:1px solid var(--line);border-radius:99px;font-size:.85rem;color:var(--mute);background:var(--soft)}
+.flow{display:flex;align-items:stretch;gap:0;margin-top:6vh;flex-wrap:wrap}
+.step{flex:1;min-width:130px;text-align:center;padding:2.4vh 1vw;border:1.5px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 6px 20px -12px rgba(79,70,229,.35)}
+.step b{display:block;font-size:clamp(1rem,1.8vw,1.4rem)}
+.step span{font-size:.8rem;color:var(--mute)}
+.step i{display:grid;place-items:center;width:2.2em;height:2.2em;margin:0 auto 1vh;border-radius:50%;background:var(--pri-soft);color:var(--pri);font-style:normal;font-weight:700}
+.arrow{align-self:center;color:var(--pri);font-size:1.6rem;padding:0 .6vw}
+.grid{display:grid;gap:2vw;margin-top:4vh}
+.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}
+.card{border:1px solid var(--line);border-radius:16px;padding:2.4vh 1.6vw;background:var(--soft)}
+.card h3{font-size:clamp(1rem,1.5vw,1.2rem);color:var(--pri);margin-bottom:1.2vh}
+ul{list-style:none}
+li{position:relative;padding-left:1.5em;margin:.9vh 0;font-size:clamp(.85rem,1.3vw,1.08rem);line-height:1.45}
+li::before{content:'';position:absolute;left:0;top:.5em;width:.55em;height:.55em;border-radius:50%;background:var(--ok)}
+li code,.note code{background:var(--pri-soft);color:var(--pri);padding:.1em .4em;border-radius:5px;font-size:.88em}
+pre{background:#0f172a;color:#e2e8f0;border-radius:14px;padding:2.4vh 1.6vw;font-size:clamp(.7rem,1.15vw,.95rem);line-height:1.6;overflow:auto}
+pre .k{color:#a5b4fc}pre .s{color:#86efac}pre .c{color:#94a3b8}
+.note{margin-top:3vh;padding:1.6vh 1.4vw;border-left:4px solid var(--acc);background:#f0f9ff;border-radius:0 12px 12px 0;font-size:clamp(.85rem,1.25vw,1.05rem);line-height:1.5}
+.big{font-size:clamp(3rem,8vw,6rem);font-weight:800;color:var(--pri)}
+.ui{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:2vh 4vw;z-index:5;font-size:.85rem;color:var(--mute)}
+.bar{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--pri),var(--acc));width:0;transition:width .4s;z-index:6}
+.ui button{border:1px solid var(--line);background:#fff;width:2.6em;height:2.6em;border-radius:50%;cursor:pointer;font-size:1rem;color:var(--ink);transition:.15s}
+.ui button:hover{background:var(--pri);color:#fff;border-color:var(--pri)}
+.ui .btns{display:flex;gap:8px}
+@media(max-width:800px){.g3,.g2{grid-template-columns:1fr}.slide{overflow:auto;justify-content:flex-start;padding-top:8vh}.arrow{display:none}.flow{gap:10px}}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="deck" id="deck">
+
+<section class="slide active">
+  <div class="eyebrow">Project ML-WEB-01</div>
+  <h1>Build &amp; Ship an<br><em>ML-Powered</em> Web App</h1>
+  <p class="lead">Train a model, wrap it in FastAPI, validate with Pydantic, connect a plain HTML/CSS/JS frontend, and deploy on Render.</p>
+  <span class="tag">Use ← → or Space to navigate</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Overview</div>
+  <h2>The full pipeline in five steps</h2>
+  <div class="flow">
+    <div class="step"><i>1</i><b>Model</b><span>scikit-learn</span></div><div class="arrow">→</div>
+    <div class="step"><i>2</i><b>FastAPI</b><span>/predict</span></div><div class="arrow">→</div>
+    <div class="step"><i>3</i><b>Pydantic</b><span>validation</span></div><div class="arrow">→</div>
+    <div class="step"><i>4</i><b>Frontend</b><span>HTML · CSS · JS</span></div><div class="arrow">→</div>
+    <div class="step"><i>5</i><b>Render</b><span>deployment</span></div>
+  </div>
+  <p class="lead">Raw input goes in from the browser and a prediction comes back, with no preprocessing code duplicated anywhere.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Phase 01</div>
+  <h2>Machine Learning Model Build</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Explore</h3><ul>
+      <li>Load data, check shape &amp; columns</li><li>Types, missing values, duplicates</li><li>EDA: target, heatmap, key relationships</li></ul></div>
+    <div class="card"><h3>Prepare</h3><ul>
+      <li>Clean duplicates &amp; invalid values</li><li>Fix skew with a log-transform</li><li>Group rare categories into “Other”</li><li>Split <b>before</b> preprocessing</li></ul></div>
+    <div class="card"><h3>Model</h3><ul>
+      <li><code>ColumnTransformer</code> + <code>Pipeline</code></li><li>Baseline, then stronger model</li><li>Tune with <code>RandomizedSearchCV</code></li><li>Save with <code>joblib.dump()</code></li></ul></div>
+  </div>
+  <div class="note"><b>Why it matters:</b> saving the whole pipeline means the API calls <code>predict()</code> on raw input, with no preprocessing to reimplement.</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Phase 02</div>
+  <h2>FastAPI Service Layer</h2>
+  <div class="grid g2">
+    <pre><span class="k">import</span> joblib
+<span class="k">from</span> fastapi <span class="k">import</span> FastAPI
+
+app = FastAPI()
+model = joblib.load(<span class="s">"model.pkl"</span>)  <span class="c"># once</span>
+
+<span class="k">@app</span>.post(<span class="s">"/predict"</span>)
+<span class="k">def</span> predict(data: Input): ...
+
+<span class="k">@app</span>.get(<span class="s">"/health"</span>)
+<span class="k">def</span> health(): <span class="k">return</span> {<span class="s">"ok"</span>: True}</pre>
+    <div><ul>
+      <li>Load <code>model.pkl</code> once at startup</li><li><code>/predict</code> POST route</li><li><code>/health</code> for uptime checks</li><li>Serve the static frontend from the same app</li></ul>
+      <div class="note"><b>Gotcha:</b> same origin means no CORS to configure.</div></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Phase 03</div>
+  <h2>Pydantic Validation</h2>
+  <div class="grid g2">
+    <pre><span class="k">from</span> pydantic <span class="k">import</span> BaseModel, Field
+
+<span class="k">class</span> Input(BaseModel):
+    age: int = Field(ge=<span class="s">0</span>, le=<span class="s">120</span>)
+    sleep_hours: float = Field(ge=<span class="s">0</span>, le=<span class="s">24</span>)
+    <span class="c"># one typed field per model input</span>
+
+<span class="k">class</span> Output(BaseModel):
+    prediction: float</pre>
+    <div><ul>
+      <li>One typed field per model input</li><li>Constraints reject bad values automatically</li><li>Response schema for the output</li><li>Both wired into <code>/predict</code></li></ul>
+      <div class="note"><b>Demo moment:</b> send a negative age and show the auto-generated <code>422</code> error.</div></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Phase 04</div>
+  <h2>Frontend: HTML / CSS / JS</h2>
+  <div class="grid g2">
+    <pre><span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">"/predict"</span>, {
+  method: <span class="s">"POST"</span>,
+  headers: {<span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>},
+  body: JSON.stringify(formData)
+});
+<span class="k">const</span> result = <span class="k">await</span> res.json();</pre>
+    <div><ul>
+      <li>Form in <code>index.html</code></li><li>POST via <code>fetch</code> in <code>script.js</code></li><li>Show prediction &amp; confidence in the DOM</li><li>Handle loading and error states visibly</li></ul>
+      <div class="note">No framework needed. Plain <code>fetch()</code> is the whole integration.</div></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Phase 05</div>
+  <h2>Deployment on Render</h2>
+  <div class="grid g2">
+    <div><ul>
+      <li>Push the repo to GitHub</li><li>New Web Service, connect the repo</li><li>Build: <code>pip install -r requirements.txt</code></li><li>Start command uses <code>$PORT</code>, never a hardcoded port</li></ul></div>
+    <div class="note" style="margin:0;align-self:start"><b>Free tier note:</b> the service sleeps when idle, so the first request can take 30–50s. Mention this before a live demo so it doesn’t look broken.</div>
+  </div>
+</section>
+
+<section class="slide" style="align-items:center;text-align:center">
+  <div class="big">Ship it 🚀</div>
+  <h2 style="margin-top:2vh">ML → API → Web</h2>
+  <p class="lead">Built to actually work. Thank you!</p>
+</section>
+
+</div>
+
+<div class="ui">
+  <span id="count">1 / 9</span>
+  <div class="btns"><button id="prev" aria-label="Previous">←</button><button id="next" aria-label="Next">→</button></div>
+</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];let i=0;
+function go(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>{s.classList.toggle('active',k===i);s.classList.toggle('prev',k<i)});
+  document.getElementById('count').textContent=(i+1)+' / '+slides.length;
+  document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+  history.replaceState(null,'','#'+(i+1));
+}
+document.getElementById('next').onclick=()=>go(i+1);
+document.getElementById('prev').onclick=()=>go(i-1);
+addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();go(i+1)}
+  if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(i-1)}
+  if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);
+  if(e.key==='f')document.documentElement.requestFullscreen?.();
+});
+let x=0;addEventListener('touchstart',e=>x=e.touches[0].clientX);
+addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-x;if(Math.abs(d)>50)go(i+(d<0?1:-1))});
+go((parseInt(location.hash.slice(1))||1)-1);
+</script>
+</body>
+</html>

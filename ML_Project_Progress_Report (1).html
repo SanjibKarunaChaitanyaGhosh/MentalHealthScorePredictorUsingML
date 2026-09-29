@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML → API → Web — Progress Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0f2a43; --blue:#2563eb; --cyan:#0891b2; --amber:#f59e0b; --green:#16a34a; --pink:#db2777;
+    --slate:#0b0b0b; --paper:#ffffff; --tint:#f3f8fc; --grid:#e9f0f6; --line:#d6e2ec;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:#ffb6b6;
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:34px 34px; color:var(--ink);
+    font-family:'Inter', sans-serif; line-height:1.6;
+  }
+  ::selection{background:var(--amber); color:#fff;}
+  code, .mono{font-family:'IBM Plex Mono', monospace;}
+  code{background:#e8f1fb; color:var(--blue); padding:1px 6px; border-radius:3px; font-size:.86em;}
+
+  .titleblock{
+    border:1px solid var(--line); border-top:5px solid var(--blue);
+    margin:24px; padding:32px clamp(20px,4vw,56px); position:relative; background:#fff;
+    box-shadow:0 12px 40px -24px rgba(37,99,235,.45);
+  }
+  .titleblock::before, .titleblock::after{content:'+'; position:absolute; color:var(--cyan); font-size:14px;}
+  .titleblock::before{top:-9px; left:-9px;}
+  .titleblock::after{bottom:-9px; right:-9px;}
+  .stamp-row{
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--slate);
+    border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:22px; letter-spacing:.03em;
+  }
+  .stamp-row span b{color:var(--blue); font-weight:600;}
+  #statusStamp{background:var(--amber); color:#fff; padding:1px 8px; border-radius:3px;}
+  h1.proj-title{font-size:clamp(2.2rem, 5.5vw, 4.2rem); line-height:1.02; font-weight:700; color:var(--ink);}
+  h1.proj-title em{font-style:normal; background:linear-gradient(90deg,var(--blue),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .proj-sub{color:var(--slate); font-size:1.05rem; margin-top:14px; max-width:660px;}
+
+  .summary{display:flex; gap:12px; flex-wrap:wrap; margin-top:22px;}
+  .pill{font-family:'IBM Plex Mono',monospace; font-size:12px; padding:6px 12px; border-radius:99px; font-weight:500;}
+  .pill.g{background:#dcfce7; color:#166534;} .pill.b{background:#dbeafe; color:#1d4ed8;} .pill.a{background:#fef3c7; color:#92400e;}
+
+  .schematic{margin-top:32px; overflow-x:auto;}
+  .schematic svg{width:100%; min-width:560px; height:auto; display:block;}
+  .flow-line{stroke:var(--cyan); stroke-width:2; fill:none; stroke-dasharray:6 8; animation:flow 1.6s linear infinite;}
+  @keyframes flow{to{stroke-dashoffset:-56;}}
+  .node-box{fill:#fff; stroke:#b6c8d8; stroke-width:1.5; transition:.3s;}
+  .node-box.done{fill:#f0fdf4; stroke:var(--green);}
+  .node-box.partial{fill:#eff6ff; stroke:var(--blue);}
+  .node-box.active{stroke:var(--amber); stroke-width:2.5;}
+  .node-label{font-family:'IBM Plex Mono', monospace; font-size:11px; fill:var(--ink); font-weight:600;}
+  .node-sub{font-family:'IBM Plex Mono', monospace; font-size:9px; fill:var(--slate);}
+
+  .layout{display:grid; grid-template-columns:230px 1fr; max-width:1180px; margin:0 auto; padding:0 24px 80px;}
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+  .sidebar{position:sticky; top:20px; align-self:start; height:fit-content; padding-top:8px; padding-right:20px;}
+  @media (max-width:860px){.sidebar{position:relative; top:0; display:flex; overflow-x:auto; gap:8px; padding:12px 0; margin-bottom:8px;}}
+  .sheet-index{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--slate); text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px;}
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-left:3px solid var(--line);
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--slate);
+    cursor:pointer; text-decoration:none; transition:.15s; white-space:nowrap; background:#fff;
+  }
+  .nav-item:hover{color:var(--ink); border-left-color:var(--cyan);}
+  .nav-item.active{color:var(--blue); border-left-color:var(--amber); background:#eff6ff; font-weight:600;}
+  .nav-item .num{color:var(--amber); font-weight:600;}
+  .nav-item .np{margin-left:auto; font-size:10.5px; padding:1px 6px; border-radius:99px; background:var(--grid); color:var(--slate);}
+  .nav-item .np.full{background:#dcfce7; color:#166534;}
+  .progress-wrap{margin-top:22px; padding:14px; border:1px solid var(--line); background:#fff; border-radius:6px;}
+  .progress-wrap .label{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--slate); display:flex; justify-content:space-between; margin-bottom:8px;}
+  .progress-bar{height:8px; background:var(--grid); border-radius:99px; overflow:hidden;}
+  .progress-fill{height:100%; background:linear-gradient(90deg,var(--blue),var(--green)); width:0%; transition:width .35s ease;}
+
+  .sheet{
+    border:1px solid var(--line); border-top:4px solid var(--c,var(--blue)); margin:20px 0 32px;
+    padding:clamp(20px,3.5vw,40px); position:relative; scroll-margin-top:20px; background:#fff;
+    box-shadow:0 10px 30px -22px rgba(15,42,67,.5);
+  }
+  #phase1{--c:var(--blue);} #phase2{--c:var(--cyan);} #phase3{--c:var(--green);} #phase4{--c:var(--amber);} #phase5{--c:var(--pink);}
+  .sheet-corner{
+    position:absolute; top:0; right:0; font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+    color:#fff; background:var(--c); padding:5px 12px; letter-spacing:.05em;
+  }
+  .sheet h2{
+    font-family:'Barlow Condensed', sans-serif; text-transform:uppercase; letter-spacing:.02em;
+    font-size:clamp(1.6rem,3vw,2.3rem); color:var(--ink); font-weight:600;
+    display:flex; align-items:baseline; gap:14px; margin-bottom:6px; padding-right:110px;
+  }
+  .sheet h2 .tag{font-family:'IBM Plex Mono',monospace; font-size:13px; color:#fff; background:var(--c); padding:1px 8px; border-radius:3px; letter-spacing:.1em;}
+  .sheet .deck{color:var(--slate); font-size:.98rem; margin-bottom:18px; max-width:680px;}
+  .sheet h3{font-size:1.05rem; color:var(--c); font-weight:600; margin:22px 0 10px;}
+  .sheet p{font-size:.95rem; margin-bottom:10px; max-width:700px;}
+
+  .phase-meter{display:flex; align-items:center; gap:12px; margin:4px 0 14px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--slate);}
+  .phase-meter .track{flex:1; max-width:340px; height:8px; background:var(--grid); border-radius:99px; overflow:hidden;}
+  .phase-meter .fill{height:100%; width:0; background:var(--c); transition:width .4s;}
+  .badge{font-weight:600; padding:2px 10px; border-radius:99px; color:#fff; font-size:11px; letter-spacing:.05em;}
+  .badge.done{background:var(--green);} .badge.wip{background:var(--blue);} .badge.todo{background:#94a3b8;}
+
+  .checklist{list-style:none; margin:12px 0 4px; padding:0;}
+  .checklist li{display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line); font-size:.92rem;}
+  .checklist li:last-child{border-bottom:none;}
+  .checklist input[type=checkbox]{
+    appearance:none; width:18px; height:18px; min-width:18px; margin-top:2px; border:1.5px solid var(--c);
+    background:#fff; cursor:pointer; position:relative; border-radius:4px;
+  }
+  .checklist input[type=checkbox]:checked{background:var(--green); border-color:var(--green);}
+  .checklist input[type=checkbox]:checked::after{content:'✓'; position:absolute; top:-2px; left:3px; font-size:13px; color:#fff; font-weight:700;}
+  .checklist label{cursor:pointer;}
+  .checklist li.done label{color:var(--slate);}
+
+  .callout{border-left:4px solid var(--amber); background:#fffbeb; padding:12px 16px; margin:16px 0; font-size:.9rem; border-radius:0 6px 6px 0;}
+  .callout b{color:#b45309;}
+
+  footer{text-align:center; padding:40px 24px; color:var(--slate); font-family:'IBM Plex Mono', monospace; font-size:.8rem; border-top:1px solid var(--line); margin-top:20px;}
+  footer b{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<div class="titleblock">
+  <div class="stamp-row">
+    <span>PROJECT NO. <b>ML-WEB-01</b></span>
+    <span>REPORT <b>PROGRESS REVIEW</b></span>
+    <span>SHEETS <b id="sheetCountLabel">5</b></span>
+    <span>STATUS <b id="statusStamp">IN PROGRESS</b></span>
+  </div>
+  <h1 class="proj-title">Build &amp; Ship an <em>ML‑Powered</em> Web App</h1>
+  <p class="proj-sub">Progress report: a five-sheet build plan to train a model, wrap it in FastAPI, validate with Pydantic, connect a plain HTML/CSS/JS frontend, and ship it on Render.</p>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="schematic">
+    <svg viewBox="0 0 980 150" id="pipelineSvg">
+      <!-- connecting lines -->
+      <path class="flow-line" d="M120,75 L260,75"></path>
+      <path class="flow-line" d="M380,75 L520,75"></path>
+      <path class="flow-line" d="M640,75 L780,75"></path>
+      <path class="flow-line" d="M900,75 L940,75"></path>
+      <!-- nodes -->
+      <g id="node-0"><rect class="node-box" x="10" y="45" width="110" height="60" rx="2"></rect>
+        <text class="node-label" x="65" y="72" text-anchor="middle">DATA</text>
+        <text class="node-sub" x="65" y="88" text-anchor="middle">Phase 01</text></g>
+      <g id="node-1"><rect class="node-box" x="260" y="45" width="120" height="60" rx="2"></rect>
+        <text class="node-label" x="320" y="72" text-anchor="middle">MODEL</text>
+        <text class="node-sub" x="320" y="88" text-anchor="middle">Phase 01</text></g>
+      <g id="node-2"><rect class="node-box" x="520" y="45" width="120" height="60" rx="2"></rect>
+        <text class="node-label" x="580" y="66" text-anchor="middle">FASTAPI</text>
+        <text class="node-sub" x="580" y="80" text-anchor="middle">+ PYDANTIC</text>
+        <text class="node-sub" x="580" y="93" text-anchor="middle">Phase 02–03</text></g>
+      <g id="node-3"><rect class="node-box" x="780" y="45" width="120" height="60" rx="2"></rect>
+        <text class="node-label" x="840" y="72" text-anchor="middle">UI</text>
+        <text class="node-sub" x="840" y="88" text-anchor="middle">Phase 04</text></g>
+      <g id="node-4"><rect class="node-box" x="940" y="45" width="34" height="60" rx="2"></rect>
+        <text class="node-label" x="957" y="72" text-anchor="middle" font-size="9">▶</text>
+        <text class="node-sub" x="957" y="88" text-anchor="middle">05</text></g>
+    </svg>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sheet-index"><strong>Sheet Index</strong></div>
+    <a class="nav-item" data-target="phase1"><span class="num">01</span> Model Build</a>
+    <a class="nav-item" data-target="phase2"><span class="num">02</span> FastAPI</a>
+    <a class="nav-item" data-target="phase3"><span class="num">03</span> Pydantic</a>
+    <a class="nav-item" data-target="phase4"><span class="num">04</span> Frontend</a>
+    <a class="nav-item" data-target="phase5"><span class="num">05</span> Deployment</a>
+
+    <div class="progress-wrap">
+      <div class="label"><span>OVERALL</span><span id="overallPct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="overallFill"></div></div>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- PHASE 1 -->
+    <section class="sheet" id="phase1">
+      <div class="sheet-corner">SHEET 01 / 05</div>
+      <h2><span class="tag">01</span> Machine Learning Model Build</h2>
+      <p class="deck">Everything upstream of the API. Get this sheet right and the rest of the build is straightforward.</p>
+
+      <h3>Notebook checklist — steps we performed</h3>
+      <div class="phase-meter" data-meter="1"><span class="badge"></span><div class="track"><div class="fill"></div></div><span class="cnt"></span></div>
+      <ul class="checklist" data-phase="1">
+        <li><input type="checkbox" id="c1-1" checked><label for="c1-1">Import libraries — pandas, numpy, matplotlib/seaborn, scikit-learn, joblib</label></li>
+        <li><input type="checkbox" id="c1-2" checked><label for="c1-2">Load the dataset and check shape &amp; column names</label></li>
+        <li><input type="checkbox" id="c1-3" checked><label for="c1-3">Basic data understanding — data types, missing values, duplicate rows, summary statistics</label></li>
+        <li><input type="checkbox" id="c1-4" checked><label for="c1-4">Exploratory Data Analysis — target distribution, correlation heatmap, stress vs score, usage vs score, sleep vs score, platform counts</label></li>
+        <li><input type="checkbox" id="c1-5" checked><label for="c1-5">Data cleaning — drop duplicate rows, fix an invalid negative value found in the data</label></li>
+        <li><input type="checkbox" id="c1-6" checked><label for="c1-6">Check skewness on numeric columns, log-transform the one column that needed it</label></li>
+        <li><input type="checkbox" id="c1-7" checked><label for="c1-7">Feature engineering — group a high-cardinality column into top categories + "Other"</label></li>
+        <li><input type="checkbox" id="c1-8" checked><label for="c1-8">Decide encoding strategy — ordinal for ordered categories, one-hot for unordered ones</label></li>
+        <li><input type="checkbox" id="c1-9" checked><label for="c1-9">Train/test split, done before any preprocessing to avoid data leakage</label></li>
+        <li><input type="checkbox" id="c1-10" checked><label for="c1-10">Build preprocessing with <code>ColumnTransformer</code> — impute, scale, encode</label></li>
+        <li><input type="checkbox" id="c1-11" checked><label for="c1-11">Wrap preprocessing + model together in a single <code>Pipeline</code></label></li>
+        <li><input type="checkbox" id="c1-12" checked><label for="c1-12">Train a baseline model, then a stronger model on the same pipeline</label></li>
+        <li><input type="checkbox" id="c1-13" checked><label for="c1-13">Hyperparameter tuning with <code>RandomizedSearchCV</code></label></li>
+        <li><input type="checkbox" id="c1-14" checked><label for="c1-14">Evaluate and compare models with proper metrics</label></li>
+        <li><input type="checkbox" id="c1-15" checked><label for="c1-15">Check feature importance to confirm the model learned sensible patterns</label></li>
+        <li><input type="checkbox" id="c1-16" checked><label for="c1-16">Save the complete pipeline with <code>joblib.dump()</code></label></li>
+        <li><input type="checkbox" id="c1-17" checked><label for="c1-17">Run one prediction example end-to-end to sanity-check the saved pipeline</label></li>
+      </ul>
+
+      <div class="callout"><b>Why it matters:</b> we save the whole pipeline, not just the raw model — the FastAPI backend can then call <code>predict()</code> directly on raw input without reimplementing any preprocessing.</div>
+    </section>
+
+    <!-- PHASE 2 -->
+    <section class="sheet" id="phase2">
+      <div class="sheet-corner">SHEET 02 / 05</div>
+      <h2><span class="tag">02</span> FastAPI Service Layer</h2>
+      <p class="deck">Wraps the saved pipeline behind a clean, documented HTTP interface.</p>
+
+      <div class="phase-meter" data-meter="2"><span class="badge"></span><div class="track"><div class="fill"></div></div><span class="cnt"></span></div>
+      <ul class="checklist" data-phase="2">
+        <li><input type="checkbox" id="c2-1" checked><label for="c2-1">Load <code>model.pkl</code> once at startup (not per-request)</label></li>
+        <li><input type="checkbox" id="c2-2" checked><label for="c2-2">Create a <code>/predict</code> POST route</label></li>
+        <li><input type="checkbox" id="c2-3"><label for="c2-3">Mount static frontend from the same app (avoids CORS)</label></li>
+        <li><input type="checkbox" id="c2-4"><label for="c2-4">Add a <code>/health</code> route for uptime checks</label></li>
+      </ul>
+
+      <div class="callout"><b>Gotcha:</b> serving frontend + API from one FastAPI app means same-origin requests — no CORS headers to configure at all.</div>
+    </section>
+
+    <!-- PHASE 3 -->
+    <section class="sheet" id="phase3">
+      <div class="sheet-corner">SHEET 03 / 05</div>
+      <h2><span class="tag">03</span> Pydantic Validation</h2>
+      <p class="deck">The contract between frontend input and model input — reject bad data before it reaches the pipeline.</p>
+
+      <div class="phase-meter" data-meter="3"><span class="badge"></span><div class="track"><div class="fill"></div></div><span class="cnt"></span></div>
+      <ul class="checklist" data-phase="3">
+        <li><input type="checkbox" id="c3-1"><label for="c3-1">Define a request schema with one typed field per model input</label></li>
+        <li><input type="checkbox" id="c3-2"><label for="c3-2">Add validation constraints so bad values are rejected automatically</label></li>
+        <li><input type="checkbox" id="c3-3"><label for="c3-3">Define a response schema for the prediction output</label></li>
+        <li><input type="checkbox" id="c3-4"><label for="c3-4">Wire both schemas into the <code>/predict</code> route</label></li>
+      </ul>
+
+      <div class="callout"><b>On camera:</b> send a bad request (e.g. a negative age) and show FastAPI's auto-generated 422 error — this is the moment that sells Pydantic to viewers.</div>
+    </section>
+
+    <!-- PHASE 4 -->
+    <section class="sheet" id="phase4">
+      <div class="sheet-corner">SHEET 04 / 05</div>
+      <h2><span class="tag">04</span> Frontend (HTML/CSS/JS)</h2>
+      <p class="deck">No framework needed — plain <code>fetch()</code> is the whole integration.</p>
+
+      <div class="phase-meter" data-meter="4"><span class="badge"></span><div class="track"><div class="fill"></div></div><span class="cnt"></span></div>
+      <ul class="checklist" data-phase="4">
+        <li><input type="checkbox" id="c4-1"><label for="c4-1">Build form in <code>index.html</code></label></li>
+        <li><input type="checkbox" id="c4-2"><label for="c4-2">POST form data via <code>fetch</code> in <code>script.js</code></label></li>
+        <li><input type="checkbox" id="c4-3"><label for="c4-3">Render prediction + confidence in the DOM</label></li>
+        <li><input type="checkbox" id="c4-4"><label for="c4-4">Handle loading + error states visibly</label></li>
+      </ul>
+
+    </section>
+
+    <!-- PHASE 5 -->
+    <section class="sheet" id="phase5">
+      <div class="sheet-corner">SHEET 05 / 05</div>
+      <h2><span class="tag">05</span> Deployment — Render</h2>
+      <p class="deck">One web service, one repo, one build command.</p>
+
+      <div class="phase-meter" data-meter="5"><span class="badge"></span><div class="track"><div class="fill"></div></div><span class="cnt"></span></div>
+      <ul class="checklist" data-phase="5">
+        <li><input type="checkbox" id="c5-1"><label for="c5-1">Push repo to GitHub</label></li>
+        <li><input type="checkbox" id="c5-2"><label for="c5-2">New Web Service on Render, connect repo</label></li>
+        <li><input type="checkbox" id="c5-3"><label for="c5-3">Build command: <code>pip install -r requirements.txt</code></label></li>
+        <li><input type="checkbox" id="c5-4"><label for="c5-4">Start command uses <code>$PORT</code>, not a hardcoded port</label></li>
+      </ul>
+
+      <div class="callout"><b>Free tier note:</b> the service spins down when idle — first request after inactivity can take 30–50s to wake. Explain this on camera so a live demo doesn't look broken.</div>
+    </section>
+
+    <footer>
+      All five sheets checked → ship it. <b>ML → API → Web</b> — built for the video, built to actually work.
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  // ---- checklist state + progress ----
+  const phases = {1:8, 2:4, 3:0, 4:4, 5:4}; // item counts per phase (phase3 has none, counted via itself if added later)
+  const allBoxes = Array.from(document.querySelectorAll('.checklist input[type=checkbox]'));
+
+  function updateProgress(){
+    const total = allBoxes.length;
+    const checked = allBoxes.filter(b => b.checked).length;
+    const pct = total ? Math.round((checked/total)*100) : 0;
+    document.getElementById('overallPct').textContent = pct + '%';
+    document.getElementById('overallFill').style.width = pct + '%';
+    document.getElementById('statusStamp').textContent = pct === 100 ? 'COMPLETE' : (pct === 0 ? 'NOT STARTED' : 'IN PROGRESS');
+  }
+
+  allBoxes.forEach(box => {
+    box.addEventListener('change', () => {
+      box.closest('li').classList.toggle('done', box.checked);
+      updateProgress();
+    });
+  });
+  updateProgress();
+
+  // ---- copy buttons ----
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pre = btn.nextElementSibling;
+      navigator.clipboard.writeText(pre.textContent).then(() => {
+        btn.textContent = 'COPIED';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1400);
+      });
+    });
+  });
+
+  // ---- accordion ----
+  document.querySelectorAll('.accordion-head').forEach(head => {
+    head.addEventListener('click', () => {
+      const acc = head.parentElement;
+      const body = acc.querySelector('.accordion-body');
+      const isOpen = acc.classList.toggle('open');
+      body.style.maxHeight = isOpen ? body.scrollHeight + 'px' : '0px';
+    });
+  });
+
+  // ---- tabs ----
+  document.querySelectorAll('[data-tabgroup]').forEach(group => {
+    const buttons = group.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const panels = group.parentElement.querySelectorAll('.tab-panel');
+        panels.forEach(p => p.classList.toggle('active', p.dataset.panel === btn.dataset.tab));
+      });
+    });
+  });
+
+  // ---- sidebar nav + scroll spy ----
+  const navItems = document.querySelectorAll('.nav-item');
+  const sections = Array.from(navItems).map(n => document.getElementById(n.dataset.target));
+
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById(item.dataset.target).scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting){
+        navItems.forEach(n => n.classList.toggle('active', n.dataset.target === entry.target.id));
+        const idx = sections.findIndex(s => s.id === entry.target.id);
+        document.querySelectorAll('.node-box').forEach(nb => nb.classList.remove('active'));
+        const node = document.getElementById('node-' + Math.min(idx, 4));
+        if (node) node.querySelector('.node-box').classList.add('active');
+      }
+    });
+  }, {rootMargin: '-40% 0px -50% 0px'});
+
+  sections.forEach(s => s && observer.observe(s));
+})();
+</script>
+
+
+<script>
+(function(){
+  const names={1:'Model Build',2:'FastAPI',3:'Pydantic',4:'Frontend',5:'Deployment'};
+  function calc(){
+    let doneP=0,wipP=0,todoP=0;
+    const stats={};
+    for(let n=1;n<=5;n++){
+      const bx=[...document.querySelectorAll('.checklist[data-phase="'+n+'"] input')];
+      const c=bx.filter(b=>b.checked).length,t=bx.length,p=t?Math.round(c/t*100):0;
+      stats[n]={c,t,p};
+      const meter=document.querySelector('[data-meter="'+n+'"]');
+      meter.querySelector('.fill').style.width=p+'%';
+      meter.querySelector('.cnt').textContent=c+' / '+t+' tasks · '+p+'%';
+      const badge=meter.querySelector('.badge');
+      const st=p===100?'done':p>0?'wip':'todo';
+      badge.className='badge '+st; badge.textContent=st==='done'?'COMPLETED':st==='wip'?'IN PROGRESS':'NOT STARTED';
+      if(st==='done')doneP++; else if(st==='wip')wipP++; else todoP++;
+      const nav=document.querySelector('.nav-item[data-target="phase'+n+'"]');
+      let np=nav.querySelector('.np'); if(!np){np=document.createElement('span');np.className='np';nav.appendChild(np);}
+      np.textContent=p+'%'; np.classList.toggle('full',p===100);
+      document.querySelector('#phase'+n+' .sheet-corner').textContent='SHEET 0'+n+' / 05 · '+p+'%';
+    }
+    // pipeline nodes: 0,1 -> phase1 ; 2 -> phases 2-3 ; 3 -> phase4 ; 4 -> phase5
+    const nodeP=[stats[1].p,stats[1].p,Math.round((stats[2].p+stats[3].p)/2),stats[4].p,stats[5].p];
+    nodeP.forEach((p,k)=>{const b=document.querySelector('#node-'+k+' .node-box');b.classList.toggle('done',p===100);b.classList.toggle('partial',p>0&&p<100);});
+    document.getElementById('summary').innerHTML=
+      '<span class="pill g">✓ '+doneP+' completed</span><span class="pill b">◔ '+wipP+' in progress</span><span class="pill a">○ '+todoP+' not started</span>';
+    document.getElementById('phase1');
+  }
+  document.querySelectorAll('.checklist li').forEach(li=>{ if(li.querySelector('input').checked) li.classList.add('done'); });
+  document.querySelectorAll('.checklist input').forEach(b=>b.addEventListener('change',calc));
+  calc();
+})();
+</script>
+</body>
+</html>
